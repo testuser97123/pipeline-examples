@@ -1,0 +1,111 @@
+Create a new namespace where the following secrets will be applied.
+
+oc new-project oco
+
+Add the kubeconfig secret which will be used to deploy the operator under test and run the certification checks.
+
+    Open a terminal window
+    Set the KUBECONFIG environment variable
+
+    export KUBECONFIG=/path/to/your/cluster/kubeconfig
+
+This kubeconfig will be used to deploy the Operator under test and run the certification checks.
+[root@openshift-hour pipeline]# oc get is
+NAME                        IMAGE REPOSITORY                                                                            TAGS        UPDATED
+pipelines-operator-bundle   default-route-openshift-image-registry.apps.lab.example.com/oco/pipelines-operator-bundle   v1.16.1-3   2 hours ago
+pipelines-vote-api          default-route-openshift-image-registry.apps.lab.example.com/oco/pipelines-vote-api          latest      About an hour ago
+[root@openshift-hour pipeline]# tkn pipelinerun list
+NAME                                 STARTED      DURATION   STATUS
+build-deploy-api-pipelinerun-kl7k6   1 hour ago   7m11s      Succeeded
+
+    oc create secret generic kubeconfig --from-file=kubeconfig=$KUBECONFIG
+
+Configuring steps for submitting the results
+
+    Add the github API token to the repo where the PR will be created
+
+oc create secret generic github-api-token --from-literal GITHUB_TOKEN=<github token>
+
+    Add RedHat Container API access key
+
+    This API access key is specifically related to your unique partner account for Red Hat Connect portal. Instructions to obtain your API key can be found: here
+
+oc create secret generic pyxis-api-secret --from-literal pyxis_api_key=< API KEY >
+
+    Optional pipeline configurations can be found here
+
+Execute the Pipeline (Development Iterations)
+
+A pre-requisite to running a pipeline is that a workspace-template.yaml exists in the directory you want to execute the tkn commands from.
+
+To create a workspace-template.yaml
+
+    cat <<EOF > workspace-template.yaml
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+    EOF
+    
+
+
+
+
+cat << EOF > ssh-secret.yml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: github-ssh-credentials
+data:
+  id_rsa: |
+        LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFB
+        QUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFB
+        d0VBQVFBQUFZRUF6QTMvTDhpSnp0U25Ld1gwZzZBQjBCdFkzQm9vL2dkMzFrZ2ZqUnVjTVJETmQw
+        RHFnQzJLCm8rYmJhMVpLbUlZUzNqT0dyU0pvN3JkYm9TVDBZc3pDck9BQTVHRW81SlJ4b1hEbFk4
+        SGxxekpDajh4QmJLdm4xS0FycEgKL1d3QnY5SkR2MHRadDhCMWVad0NTZy9HenBFM1Rvb1VyNjFi
+        MjMybjJqc3lTMTNweW5lUW82UEE3TUxGdmlUcWFsMkp2bgptRDY0aFZYSFI3ZmtSYUVsRjhKRHVn
+        dXFycWl0VXEvNjEwWVV2L1pBQTFodWpTK3lrU0VlR3Q4dk94N0FLcWhiazdEQkFKCnlsNlpKMlA5
+        QitSQkNxN1dhcnVBNU0wd2FRQUZ1OWVCYVR5ZWlSN1lCd0pxY2k2dEw0S3BrMmVHU3p6aFZTL0VI
+        NmV2bUsKUEYrOUxjRnkxVlNiaHR6dWRyMm1NalhhOWZRa1RtMWpLWndWQVVYOXhHcmtXNWlqbjNw
+        emd0ZHFFbTRCODFhNVE0aDhKcwo0cEtERHprbktTTDlmZGVNNHdMTzNSUThDZTg2WEN6WWhEWmRK
+        bXJlQjVsVVdVRlRpRnBVQk5vZGRYaitsSVhkUFFtREp2CnpOVjA0STN4S1Yvd3MraCtKbmErb0V5
+        cVJIMHlrbFZSSFpSaGtUY0ZBQUFGaUNxT09oa3Fqam9aQUFBQUIzTnphQzF5YzIKRUFBQUdCQU13
+        Ti95L0lpYzdVcHlzRjlJT2dBZEFiV053YUtQNEhkOVpJSDQwYm5ERVF6WGRBNm9BdGlxUG0yMnRX
+        U3BpRwpFdDR6aHEwaWFPNjNXNkVrOUdMTXdxemdBT1JoS09TVWNhRnc1V1BCNWFzeVFvL01RV3ly
+        NTlTZ0s2Ui8xc0FiL1NRNzlMCldiZkFkWG1jQWtvUHhzNlJOMDZLRksrdFc5dDlwOW83TWt0ZDZj
+        cDNrS09qd096Q3hiNGs2bXBkaWI1NWcrdUlWVngwZTMKNUVXaEpSZkNRN29McXE2b3JWS3YrdGRH
+        RkwvMlFBTllibzB2c3BFaEhocmZMenNld0Nxb1c1T3d3UUNjcGVtU2RqL1FmawpRUXF1MW1xN2dP
+        VE5NR2tBQmJ2WGdXazhub2tlMkFjQ2FuSXVyUytDcVpObmhrczg0VlV2eEIrbnI1aWp4ZnZTM0Jj
+        dFZVCm00YmM3bmE5cGpJMTJ2WDBKRTV0WXltY0ZRRkYvY1JxNUZ1WW81OTZjNExYYWhKdUFmTld1
+        VU9JZkNiT0tTZ3c4NUp5a2kKL1gzWGpPTUN6dDBVUEFudk9sd3MySVEyWFNacTNnZVpWRmxCVTRo
+        YVZBVGFIWFY0L3BTRjNUMEpneWI4elZkT0NOOFNsZgo4TFBvZmlaMnZxQk1xa1I5TXBKVlVSMlVZ
+        WkUzQlFBQUFBTUJBQUVBQUFHQVBqckVpTHVGUDNUOTJES1VPN0lINjRIeml3CmhWV1FkSkJpbnZx
+        Vlp5djBuckIwUGVZQ0hEWnJISVY4YzByNmd2eCtENTRRSWQ4ek1xK0ExdmxGUHl5TXIxcXJCd3lx
+        ajAKc0hIZ0d4aXVaSlBLMWRUS1hReGVBcXVvTTU0akRXcGJ2SG1tYXQ0VXFKNlFEcGQ5R3c1UjFI
+        T3lZRUlnRmlBcUdqRjN3MwpIZUh4b3lQc2tlTW1PbTQ1NVArWUY4RVgrV1ZRbEh0NjROdkxMNXBE
+        eDlOZTR5UG1KQmRzdU5OQ3JqK2xQdWp3NVh2azF4ClJaQjJ5aWpKNkJNSmNlT3lZaS8rVmpkVzlu
+        blBxeWlrdngzNFE4VVJNQWs0OFp1WEpVUXdaN09QWFVUK2h0K3ZNbmpsYlUKS0hVdEJLUFRSVzVr
+        SXl4c0JoSmpGaDZWTmNzOG16cnlFd29BaU5MUURYOWRYck5pdTcyZVVXQ241TnVoZ0FmYWp4RDlk
+        OApaVElsWnVObTJMeTN5ZFd1TU5jZy92WE1sU0Y5U29SVlFFaGFCZVhJVExFWkMxbDkxQktyaTVN
+        OHNvLzF3bko0ekRQOXlSCmpRYWxIcWFBbzVKOS9MaElGTEdIaWE5N2N6OW41a3dQRjA3TXNDZ2Q2
+        Nm01UDJ4VUFrVTNoNDM3c3FVUEFSV292L0FBQUEKd0JhU0wwRGpERzFzcCtFNXE3S2Yra2dRKzJD
+        RWpzZmk1Ym45dUV3U1lIN25oQllncHFWb1ZmRUM4b1MyWDBUVGJQYTh2VwpjYnBQbHdMVENpTkFK
+        TUU0c1pzNTdWZHdkMTZrS2d1VkdrTVhPclNhRVpjVk85a2RWS0lUalJ5dGlsZVA4aVNWZ3R2UkFH
+        CmZoMy9PZjlvaGYzcFU2Y3VmdXdZbCs5akh6Q3l1K3NiektEanIrNVhZbVZxZDdtRCt4dHRTRDhE
+        c09WMW15ZWxqV3B2KzIKOTZReCs4MFlLSFV4RVl2OUttZmoxYytkWGpYWTI1enBNdys0K1ordGUz
+        WkhKZDZRQUFBTUVBNDFCeXErZW1zNlMxcGVMRApjUkNaWDdrbzRzRU5wL3IzMC93ZGx0N3JmdGZq
+        cWtYS25ucmZWVTkyK1RXZlllVlE0bG5kaUkxNnE3MUdCME9oNnVzTzYwCjE4S1VLaG5DWGIvVWdq
+        RHV2czM4VGQxeTJUVWRZVlBMTHRkN1ZVb2NHWitPUUFSc3pDc09rOXQ2ZE8zZ21DcTJQNGhWWUsK
+        U0VpNjB6MXB5TFJxeXlpU3NPUWlrWHpjZzdMUlYyUEM2ZGtMQk1hYlpPQmMvc1ZYdjhoQTk1MUc5
+        ZDlzRmw0WUdhSDR1bgpUUlkvSTJVUGR2cnNyaENjNVV2VzNiczNiRXdzZ3JBQUFBd1FEbHppR2sx
+        WnNhNWdLL2lkZlRpbGFrVm1GcFJlK3BDaWE0CjN6eDVXcG9iL1owMy9RR2NmT3pscXpLdXNldU5v
+        U3MwTUZOK3pha1cwQ0t2Y0tNemp2QytEQTBaak5hNjhiNlFBdllTOE8KRkh3UWI5M0JJV2dMWGVT
+        cWluRkE2WVhxazhWZ1V5RmkxSjUyRFFTV3RrN3ZiMjBoZ2pYeDUrR2dSWGdTb2p0b2cxVGNHWQps
+        VjVaZFNPNDYrRE1PSFRZU1BQczBFRVU4NmpiS1BYTW1LUWlvYzN1bkVJcVNrK3RCc0ZJVHNBaUFn
+        dXVQb2w0UVVzbFdMCkVqd3BOWE1VQTN0WThBQUFBU2NtOXZkRUJ3Y205a1pYWmhibk11WTI5dEFR
+        PT0KLS0tLS1FTkQgT1BFTlNTSCBQUklWQVRFIEtFWS0tLS0tCg==
+EOF
+
+
